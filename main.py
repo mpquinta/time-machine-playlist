@@ -27,19 +27,23 @@ song_titles = top_song + [title.getText().strip() for title in data_song_titles]
 # Create a private playlist on specified user
 scope = "playlist-modify-private"
 spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=os.environ["SPOTIPY_CLIENT_ID"], client_secret=os.environ["SPOTIPY_CLIENT_SECRET"], redirect_uri=os.environ["SPOTIPY_REDIRECT_URI"], scope=scope))
-
-# spotify.user_playlist_create("1292421614", "Billboard to Spotify", public=False, description="Takes top 100 music from date in past to create a Spotify playlist.")
+current_user_data = spotify.current_user()
+playlist_data = spotify.user_playlist_create(current_user_data["id"], f"{date} Billboard 100", public=False, description="Takes top 100 music from date in past to create a Spotify playlist.")
 
 # Search spotify for top 100 songs
-
 song_uris = []
 
 for title in song_titles:
     data = spotify.search(q=f"track:{title} year:{year}", type=["track"], market="US", limit=1)
     try:
-        song_uris.append(data["tracks"]["items"][0]["uri"])
+        song_uris.append(data["tracks"]["items"][0]["uri"].split(":")[2])
+        # if song_uris == "":
+        #     song_uris = data["tracks"]["items"][0]["uri"]
+        # song_uris = song_uris + "," + data["tracks"]["items"][0]["uri"]
     except IndexError:
         pass
 
-# song_uris = [spotify.search(q=f"track:{title} year:{year}", type=["track"], market="US", limit=1)["tracks"]["items"][0]["uri"] for title in song_titles]
-print(song_uris)
+# print(song_uris)
+
+# Add songs to the playlist
+spotify.user_playlist_add_tracks(user=current_user_data["id"], playlist_id=playlist_data["id"], tracks=song_uris)
